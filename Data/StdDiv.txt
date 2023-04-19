@@ -1,0 +1,6 @@
+1st hash func: 267,1
+2nd hash func: 65,5
+3rd hash func: 102,8
+4th hash func: 4,2
+5th hash func: 4,4
+6th hash func: 10,3
