@@ -1,5 +1,4 @@
 #include "Logging.h"
-#include "..\Errors.h"
 
 #define LOGS_TO_FILE
 

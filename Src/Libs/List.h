@@ -8,11 +8,12 @@
 #include "Swap/Swap.h"
 #include "Errors.h"
 
-const int       ResizeCoef         = 2;
-const void*     POISON_PTR         = (void*)13;
-const Element_t POISON             = (Element_t)0X7FFFFFFF;
-const char      COMAND_PROTOTYPE[] = "Dot GraphicDumps/dump%d -o GraphicDumps/Dump%d.png -T png";
-      int       GRAPHIC_DUMP_CNT   = 0;
+static const int       ResizeCoef         = 2;
+static const void*     POISON_PTR         = (void*)13;
+static const Element_t POISON             = (Element_t)0X7FFFFFFF;
+static const size_t    POISON_SIZE_T      = 0X7FFFFFFF;
+static const char      COMAND_PROTOTYPE[] = "Dot GraphicDumps/dump%d -o GraphicDumps/Dump%d.png -T png";
+static       int       GRAPHIC_DUMP_CNT   = 0;
 
 typedef struct ListElem 
 {
@@ -26,7 +27,7 @@ typedef struct LogInfo
     const char* name     = "(null)";
     const char* function = "(null)";
     const char* file     = "(null)";
-    int         line     = (int)POISON;
+    int         line     = POISON_SIZE_T;
     bool        status   = false;
 } LogInfo;
 
@@ -40,41 +41,25 @@ typedef struct List_t
     bool      linerized = false;
 }List_t;
 
-int  ListCheck(List_t* list);
+static int  ListCheck(List_t* list);
+static int  ListConstructor(List_t* list, int capacity, int line, const char* name, const char* function, const char* file);
+static int  ListDtor(List_t* list);
+static void DumpList(List_t* list, const char* function, const char* file, int line);
+static void GraphicDump(List_t* list);
+static int ListInsert(List_t* list, Element_t value, int after_which, int* index = nullptr);
+static int ListRemove(List_t* list, int index);
+static int FindFree(List_t* list, int* index);
+static int ResizeUp(List_t* list, int new_capacity);
+static int ListIterate(List_t* list, int* index);
+static int ListBegin(List_t* list, int *index);
+static int ListEnd(List_t* list, int *index);
+static int ListLinerization(List_t* list);
+static int LogicalIndexToPhys(List_t* list, int logic_index, int* physic_index);
+static int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index);
+static int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
+static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
 
-int  ListConstructor(List_t* list, int capacity, int line, const char* name, const char* function, const char* file);
-
-int  ListDtor(List_t* list);
-
-void DumpList(List_t* list, const char* function, const char* file, int line);
-
-void GraphicDump(List_t* list);
-
-int ListInsert(List_t* list, Element_t value, int after_which, int* index = nullptr);
-
-int ListRemove(List_t* list, int index);
-
-int FindFree(List_t* list, int* index);
-
-int ResizeUp(List_t* list, int new_capacity);
-
-int ListIterate(List_t* list, int* index);
-
-int ListBegin(List_t* list, int *index);
-
-int ListEnd(List_t* list, int *index);
-
-int ListLinerization(List_t* list);
-
-int LogicalIndexToPhys(List_t* list, int logic_index, int* physic_index);
-
-int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index);
-
-int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
-
-int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
-
-int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index)
+static int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index)
 {
     if (list == nullptr)
         printf("Why pointer to list = null?\n");
@@ -86,7 +71,7 @@ int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index)
     return -1;
 }
 
-int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index)
+static int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index)
 {
     if (list == nullptr)
         printf("Why pointer to list = null?\n");
@@ -98,7 +83,7 @@ int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index)
     return -1;
 }
 
-int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index)
+static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index)
 {
     if (list == nullptr)
         printf("Why pouinter to list = null?\n");
@@ -111,7 +96,7 @@ int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index)
     return 0;
 }
 
-int ListIterate(List_t* list, int* index)
+static int ListIterate(List_t* list, int* index)
 {
     ReturnIfError(ListCheck(list));
     CHECK(index == nullptr || index == POISON_PTR, "index = nullptr", -1);
@@ -119,13 +104,12 @@ int ListIterate(List_t* list, int* index)
     if (*index < 0 || (size_t)(*index) > list->capacity)
         return 0;
 
-    if (list->data[*index].next != 0)
-        *index = list->data[*index].next;
+    *index = list->data[*index].next;
 
     return 0;
 }
 
-int ListBegin(List_t* list, int *index)
+static int ListBegin(List_t* list, int *index)
 {
     ReturnIfError(ListCheck(list));
 
@@ -137,7 +121,7 @@ int ListBegin(List_t* list, int *index)
     return 0;
 }
 
-int ListEnd(List_t* list, int *index)
+static int ListEnd(List_t* list, int *index)
 {
     ReturnIfError(ListCheck(list));
 
@@ -149,7 +133,7 @@ int ListEnd(List_t* list, int *index)
     return 0;    
 }
 
-int ListLinerization(List_t* list)
+static int ListLinerization(List_t* list)
 {
     ReturnIfError(ListCheck(list));
 
@@ -197,7 +181,7 @@ int ListLinerization(List_t* list)
     return 0;
 }
 
-void GraphicDump(List_t* list)
+static void GraphicDump(List_t* list)
 {
     char name[20] = "";
     sprintf(name, "GraphicDumps/dump%d", GRAPHIC_DUMP_CNT);
@@ -303,15 +287,15 @@ void GraphicDump(List_t* list)
     GRAPHIC_DUMP_CNT++;
 }
 
-int ListCheck(List_t* list)
+static int ListCheck(List_t* list)
 {
     int error = 0;
     if (list == nullptr || list == POISON_PTR)
         error |= NULL_LIST_POINTER;
     else
     {
-        if (list->size     == (size_t)POISON)     error |= WRONG_SIZE;
-        if (list->capacity == (size_t)POISON)     error |= WRONG_CAPACITY;
+        if (list->size     == POISON_SIZE_T)     error |= WRONG_SIZE;
+        if (list->capacity == POISON_SIZE_T)     error |= WRONG_CAPACITY;
         if (list->data     == nullptr || 
             list->data     == POISON_PTR) error |= DAMAGED_DATA; 
         
@@ -321,7 +305,7 @@ int ListCheck(List_t* list)
             list->debug.function == POISON_PTR) error |= DEBUG_FUNCTION_DAMAGED;
         if (list->debug.name     == nullptr ||
             list->debug.name     == POISON_PTR) error |= DEBUG_NAME_DAMAGED;
-        if (list->debug.line     == (int)POISON)     error |= DEBUG_LINE_DAMAGED;
+        if (list->debug.line     == POISON_SIZE_T)     error |= DEBUG_LINE_DAMAGED;
     }
 
     LogAndParseErr(error != 0, error);
@@ -331,7 +315,7 @@ int ListCheck(List_t* list)
 
 #define ListCtor(list, capacity)  ListConstructor(list, capacity, __LINE__, #list, __PRETTY_FUNCTION__, __FILE__)
 
-int ListConstructor(List_t* list, int capacity, int line, const char* name, const char* function, const char* file)
+static int ListConstructor(List_t* list, int capacity, int line, const char* name, const char* function, const char* file)
 {
     LogAndParseErr(list == nullptr, NULL_LIST_POINTER);
 
@@ -356,13 +340,13 @@ int ListConstructor(List_t* list, int capacity, int line, const char* name, cons
     return ListCheck(list);
 }
 
-int ListDtor(List_t* list)
+static int ListDtor(List_t* list)
 {
     ListCheck(list);
 
-    list->capacity  = (size_t)POISON;
-    list->size      = (size_t)POISON;
-    list->free      = (size_t)POISON;
+    list->capacity  = POISON_SIZE_T;
+    list->size      = POISON_SIZE_T;
+    list->free      = POISON_SIZE_T;
     list->linerized = false;
 
     free(list->data);
@@ -371,12 +355,12 @@ int ListDtor(List_t* list)
     list->debug.file     = (const char*)POISON_PTR;
     list->debug.function = (const char*)POISON_PTR;
     list->debug.name     = (const char*)POISON_PTR;
-    list->debug.line     = (int)POISON;
+    list->debug.line     = POISON_SIZE_T;
 
     return 0;
 }
 
-int FindFree(List_t* list, int* index)
+static int FindFree(List_t* list, int* index)
 {
     ReturnIfError(ListCheck(list));
 
@@ -386,7 +370,7 @@ int FindFree(List_t* list, int* index)
     return 0;
 }
 
-int ListRemove(List_t* list, int index)
+static int ListRemove(List_t* list, int index)
 {
     ReturnIfError(ListCheck(list));
 
@@ -416,7 +400,7 @@ int ListRemove(List_t* list, int index)
     return 0;
 }
 
-int ResizeUp(List_t* list, int new_capacity)
+static int ResizeUp(List_t* list, int new_capacity)
 {
     ReturnIfError(ListCheck(list));
 
@@ -436,7 +420,7 @@ int ResizeUp(List_t* list, int new_capacity)
     return 0;
 }
 
-int ResizeIfNeed(List_t *list)
+static int ResizeIfNeed(List_t *list)
 {
     if (list->capacity == list->size)
     {
@@ -451,7 +435,7 @@ int ResizeIfNeed(List_t *list)
     return 0;
 }
 
-int ListInsert(List_t* list, Element_t value, int after_which, int* index) 
+static int ListInsert(List_t* list, Element_t value, int after_which, int* index) 
 {
     ReturnIfError(ListCheck(list));
 

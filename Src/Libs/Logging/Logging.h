@@ -2,6 +2,7 @@
 #define __LOGGING_SYM__
 
 #include <stdio.h>
+#include "../Errors.h"
 
 int  OpenLogFile(const char* file_name);
 

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #include "Swap.h"
-#include "..\Logging\Logging.h"
+#include "../Logging/Logging.h"
 
 int NormalSwap(void *a, void *b, size_t ElementSize)
 {
