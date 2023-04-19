@@ -10,11 +10,11 @@ fast: hash_table
 	g++ $(FAST_FLAGS)  Src/main.cpp Obj/Logging.obj Obj/Swap.obj Obj/HashTable.obj -o Exe/Run
 
 hash_table_debug: logging swap
-	g++ $(FAST_FLAGS)  Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
+	g++ $(FAST_FLAGS) -c  Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
 hash_table: logging swap
-	g++ $(DEBUG_FLAGS) Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
+	g++ $(DEBUG_FLAGS) -c Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
 
 logging:
-	g++ $(FAST_FLAGS) Src/Libs/Logging/Logging.cpp -o Obj/Logging.obj
+	g++ $(FAST_FLAGS) -c Src/Libs/Logging/Logging.cpp -o Obj/Logging.obj
 swap:
-	g++ $(FAST_FLAGS) Src/Libs/Swap/Swap.cpp -o Obj/Swap.obj
+	g++ $(FAST_FLAGS) -c Src/Libs/Swap/Swap.cpp -o Obj/Swap.obj
