@@ -106,7 +106,10 @@ static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index)
 
 static int ListIterate(List_t* list, int* index)
 {
-    ReturnIfError(ListCheck(list));
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
+
     CHECK(index == nullptr || index == POISON_PTR, "index = nullptr", -1);
 
     if (*index < 0 || (size_t)(*index) > list->capacity)
@@ -119,8 +122,9 @@ static int ListIterate(List_t* list, int* index)
 
 static int ListBegin(List_t* list, int *index)
 {
-    ReturnIfError(ListCheck(list));
-
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
     if (list->capacity >= 1)
         *index = list->data[0].next;
     else
@@ -131,8 +135,9 @@ static int ListBegin(List_t* list, int *index)
 
 static int ListEnd(List_t* list, int *index)
 {
-    ReturnIfError(ListCheck(list));
-
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
     if (list->capacity >= 1)
         *index = list->data[0].prev;
     else
@@ -143,7 +148,9 @@ static int ListEnd(List_t* list, int *index)
 
 static int ListLinerization(List_t* list)
 {
-    ReturnIfError(ListCheck(list));
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
 
     if (list->linerized || list->size == 0)
         return 0;
@@ -345,13 +352,19 @@ static int ListConstructor(List_t* list, int capacity, int line, const char* nam
     list->debug.status   = true;
     list->linerized      = true;
 
-    return ListCheck(list);
+    #ifdef ON_LIST_CHECKING
+        return ListCheck(list);
+    #endif
+    
+    return NO_ERRORS;
 }
 
 static int ListDtor(List_t* list)
 {
-    ListCheck(list);
-
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
+    
     list->capacity  = POISON_SIZE_T;
     list->size      = POISON_SIZE_T;
     list->free      = POISON_SIZE_T;
@@ -370,8 +383,9 @@ static int ListDtor(List_t* list)
 
 static int FindFree(List_t* list, int* index)
 {
-    ReturnIfError(ListCheck(list));
-
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
     *index = list->free;
     list->free = list->data[list->free].prev;
 
@@ -380,7 +394,9 @@ static int FindFree(List_t* list, int* index)
 
 static int ListRemove(List_t* list, int index)
 {
-    ReturnIfError(ListCheck(list));
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
 
     CHECK(index > list->capacity || index <= 0, "Error index", -1);
 
@@ -410,8 +426,9 @@ static int ListRemove(List_t* list, int index)
 
 static int ResizeUp(List_t* list, int new_capacity)
 {
-    ReturnIfError(ListCheck(list));
-
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
     list->data = (ListElem*)realloc(list->data, sizeof(ListElem)*(new_capacity + 1));
 
     if (list->data == nullptr)
@@ -445,8 +462,10 @@ static int ResizeIfNeed(List_t *list)
 
 static int ListInsert(List_t* list, Element_t value, int after_which, int* index) 
 {
-    ReturnIfError(ListCheck(list));
-
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
+    
     CHECK(after_which > list->capacity || after_which < 0, "Error index", -1);
     
     CHECK(list->data[after_which].next == -1 || list->data[after_which].prev == -1, "Index to not inserted element", -1);

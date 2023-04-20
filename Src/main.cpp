@@ -7,7 +7,7 @@
 
 const size_t TABLE_SIZE         = 127;
 const size_t NUMBER_HASH_FUNC   = 6;
-const size_t NUMBER_SPEED_TESTS = 100000;
+const size_t NUMBER_SPEED_TESTS = 100000000;
 
 //======================================FUNCTION PROTOTYPES==========================================
 
@@ -27,8 +27,8 @@ int    comparator(Element_t a, Element_t b);
 
 int main()
 {
-    TestHashFunctions("Data/English.txt", "Data/CmpHashFunctions.csv");
-
+    //fprintf(stderr, "%d\n", comparator("jacket", "abandon"));
+    //TestHashFunctions("Data/English.txt", "Data/CmpHashFunctions.csv");
     SpeedTest("Data/English.txt");
 }
 
@@ -116,7 +116,6 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
             HashTableInsert(&hash_tables[table_i], words_arr[word_i]);
 
     //==============SAVE STATS=======================
-
     FILE* result_fp = fopen(result_file, "w");
 
     for (int i = 0; i < NUMBER_HASH_FUNC; i++)
@@ -127,7 +126,6 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
     }
 
     fclose(result_fp);
-
     //===============================================
 
     for (size_t i = 0; i < NUMBER_HASH_FUNC; i++)
@@ -141,7 +139,7 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
 void SpeedTest(const char* test_data_file)
 {
     HashTable_t hash_table = {};
-    HashTableCtor(&hash_table, TABLE_SIZE, HashFunction4, comparator);
+    HashTableCtor(&hash_table, TABLE_SIZE, HashFunction5, comparator);
 
     FILE* test_data     = fopen(test_data_file, "r");
     size_t number_words = 0;
@@ -151,12 +149,11 @@ void SpeedTest(const char* test_data_file)
     for(size_t i = 0; i < number_words / 2; i++)
         HashTableInsert(&hash_table, words_arr[i]);
 
-
     for (size_t i = 0; i < NUMBER_SPEED_TESTS; i++)
         HashTableFind(&hash_table, words_arr[i % number_words]);
 
     HashTableDtor(&hash_table);
-    
+
     for (size_t i = 0; i < number_words; i++)
         free(words_arr[i]);
     free(words_arr);
@@ -164,5 +161,34 @@ void SpeedTest(const char* test_data_file)
 
 int comparator(Element_t a, Element_t b)
 {
-    return strcmp(a, b);
+    __asm__ volatile
+    (
+        ".intel_syntax noprefix\n\t"
+        "xor eax, eax\n\t"              //eax = 0
+        "xor ecx, ecx\n\t"              //ecx = 0
+
+        "movb al, BYTE PTR [rdi]\n\t"   //al = a[0]
+        "movb cl, BYTE PTR [rsi]\n\t"   //cl = b[0]
+        "cmp al, cl\n\t"                //if (al != cl) goto _ret
+        "jne _ret\n\t"                  //
+
+        "xor rdx, rdx\n\t"              //
+        "inc rdx\n\t"                   //rdx = 1
+
+        "_loop:\n\t" 
+            "or al, cl\n\t"             //
+            "je _ret\n\t"               //if (al == cl && al == 0) goto _ret
+
+            "movb al, BYTE PTR [rdi + rdx]\n\t"         //al = a[rdx]
+            "inc rdx\n\t"                               //rdx++
+            "movb cl, BYTE PTR [rsi - 1 + rdx]\n\t"     //cl = b[rdx-1]
+
+            "cmp al, cl\n\t"            //
+            "je _loop\n\t"              //while(al == cl)
+        "\n"
+        "_ret:\n\t"
+        "sub eax, ecx\n\t"
+        "ret\n\t"
+        ".att_syntax prefix\n\t"
+    );
 }

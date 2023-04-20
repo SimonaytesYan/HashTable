@@ -2,7 +2,7 @@
 
 //======================================FUNCTION IMPLEMENTATIONS=====================================
 
-void HashTableDtor  (HashTable_t* hash_table)
+void HashTableDtor (HashTable_t* hash_table)
 {
     for (int i = 0; i < hash_table->table_size; i++)
         ListDtor(&hash_table->lists[i]);
@@ -58,10 +58,16 @@ bool HashTableFind(HashTable_t* hash_table, Element_t element)
     while (index != 0)
     {
         Element_t element_i = hash_table->lists[hash].data[index].val;
-        if (!hash_table->comparator(element_i, element))
+        
+        //fprintf(stderr, "elem_i = <%s>\n", element_i);
+        //fprintf(stderr, "elem   = <%s>\n", element);
+        int comp_res = hash_table->comparator(element_i, element);
+        if (!comp_res)
             return true;
+        //fprintf(stderr, "end cmp = %d\n", comp_res);
 
         ListIterate(&hash_table->lists[hash], &index);
+        //fprintf(stderr, "go to next index\n");
     }
 
     return false;

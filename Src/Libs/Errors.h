@@ -21,7 +21,7 @@ enum ErrorCodes
 };
 
 const char* const ERROR_DESCRIPTION[] = { "Pointer to stack = nullptr\n",
-                                          "Error during memmory allocation\n",
+                                          "Error during memory allocation\n",
                                           "Error during open logs\n",
                                           "Poisoned size\n",
                                           "Poisoned capacity\n",
