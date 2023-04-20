@@ -1,10 +1,38 @@
 #include <string.h>
 
 #include "Libs/HashTable/HashTable.h"
+#include "Libs/Utility/Utility.h"
 
-const size_t MAX_WORD_LENGTH = 1000;
-const size_t TABLE_SIZE      = 255;
+//==========================================CONSTANTS================================================
 
+const size_t TABLE_SIZE         = 127;
+const size_t NUMBER_HASH_FUNC   = 6;
+const size_t NUMBER_SPEED_TESTS = 100000;
+
+//======================================FUNCTION PROTOTYPES==========================================
+
+size_t HashFunction1(const Element_t element);
+size_t HashFunction2(const Element_t element);
+size_t HashFunction3(const Element_t element);
+size_t HashFunction4(const Element_t element);
+size_t HashFunction5(const Element_t element);
+size_t HashFunction6(const Element_t element);
+
+void   TestHashFunctions(const char* test_data_file, const char* result_file);
+void   SpeedTest(const char* test_data_file);
+
+int    comparator(Element_t a, Element_t b);
+
+//======================================FUNCTION IMPLEMENTATIONS=====================================
+
+int main()
+{
+    TestHashFunctions("Data/English.txt", "Data/CmpHashFunctions.csv");
+
+    SpeedTest("Data/English.txt");
+}
+
+//===================HASH FUNCTION IMPLEMENTATION=======================
 //! this hash function always returns 1
 size_t HashFunction1(const Element_t element)
 {
@@ -67,18 +95,10 @@ size_t HashFunction6(const Element_t element)
     return hash;
 }
 
-int comparator(Element_t a, Element_t b)
-{
-    return strcmp(a, b);
-}
-
+//==========================TEST FUNCTION IMPLEMENTATION==========================
 void TestHashFunctions(const char* test_data_file, const char* result_file)
 {
-    FILE* test_data = fopen(test_data_file, "r");
-    FILE* result_fp = fopen(result_file,    "w");
-
-    HashTable_t hash_tables[6] = {};
-
+    HashTable_t hash_tables[NUMBER_HASH_FUNC] = {};
     HashTableCtor(&hash_tables[0], TABLE_SIZE, HashFunction1, comparator);
     HashTableCtor(&hash_tables[1], TABLE_SIZE, HashFunction2, comparator);
     HashTableCtor(&hash_tables[2], TABLE_SIZE, HashFunction3, comparator);
@@ -86,33 +106,63 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
     HashTableCtor(&hash_tables[4], TABLE_SIZE, HashFunction5, comparator);
     HashTableCtor(&hash_tables[5], TABLE_SIZE, HashFunction6, comparator);
 
-    char word[MAX_WORD_LENGTH] = {0};
-    while (fscanf(test_data, "%s", word) == 1)
-    {
-        for (int i = 0; i < 6; i++)
-        {
-            char* new_word = (char*)calloc(sizeof(char), strlen(word) + 1);
-            memcpy(new_word, word, sizeof(char) * strlen(word));
-            HashTableInsert(&hash_tables[i], new_word);
-        }
-    }
+    FILE* test_data     = fopen(test_data_file, "r");
+    size_t number_words = 0;
+    char** words_arr    = GetWordsFromFile(test_data, &number_words);
     fclose(test_data);
 
-    for (int i = 0; i < 6; i++)
+    for (size_t table_i = 0; table_i < NUMBER_HASH_FUNC; table_i++)
+        for(size_t word_i = 0; word_i < number_words; word_i++)
+            HashTableInsert(&hash_tables[table_i], words_arr[word_i]);
+
+    //==============SAVE STATS=======================
+
+    FILE* result_fp = fopen(result_file, "w");
+
+    for (int i = 0; i < NUMBER_HASH_FUNC; i++)
     {
         for (int j = 0; j < hash_tables[i].table_size; j++)
             fprintf(result_fp, "%d;", hash_tables[i].lists[j].size);
         fprintf(result_fp, "\n");
     }
-    
-
-    for (size_t i = 0; i < 6; i++)
-        HashTableDtor(&hash_tables[i]);
 
     fclose(result_fp);
+
+    //===============================================
+
+    for (size_t i = 0; i < NUMBER_HASH_FUNC; i++)
+        HashTableDtor(&hash_tables[i]);
+    
+    for (size_t i = 0; i < number_words; i++)
+        free(words_arr[i]);
+    free(words_arr);
 }
 
-int main()
+void SpeedTest(const char* test_data_file)
 {
-    TestHashFunctions("Data/English.txt", "Data/CmpHashFunctions.csv");
+    HashTable_t hash_table = {};
+    HashTableCtor(&hash_table, TABLE_SIZE, HashFunction4, comparator);
+
+    FILE* test_data     = fopen(test_data_file, "r");
+    size_t number_words = 0;
+    char** words_arr    = GetWordsFromFile(test_data, &number_words);
+    fclose(test_data);
+
+    for(size_t i = 0; i < number_words / 2; i++)
+        HashTableInsert(&hash_table, words_arr[i]);
+
+
+    for (size_t i = 0; i < NUMBER_SPEED_TESTS; i++)
+        HashTableFind(&hash_table, words_arr[i % number_words]);
+
+    HashTableDtor(&hash_table);
+    
+    for (size_t i = 0; i < number_words; i++)
+        free(words_arr[i]);
+    free(words_arr);
+}
+
+int comparator(Element_t a, Element_t b)
+{
+    return strcmp(a, b);
 }

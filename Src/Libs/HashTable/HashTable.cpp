@@ -1,21 +1,11 @@
 #include "HashTable.h"
 
+//======================================FUNCTION IMPLEMENTATIONS=====================================
+
 void HashTableDtor  (HashTable_t* hash_table)
 {
     for (int i = 0; i < hash_table->table_size; i++)
-    {
-        int index = 0;
-        ListIterate(&hash_table->lists[i], &index);
-        while (index != 0)
-        {
-            Element_t element_i = hash_table->lists[i].data[index].val;
-            free(hash_table->lists[i].data[index].val);
-
-            ListIterate(&hash_table->lists[i], &index);
-        }
-
         ListDtor(&hash_table->lists[i]);
-    }
 
     free(hash_table->lists);
 }

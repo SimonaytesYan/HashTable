@@ -5,6 +5,8 @@ typedef char* Element_t;
 
 #include "../List.h"
 
+//============================================STRUCTS=============================================
+
 struct HashTable_t
 {
     size_t  (*hash_function)(Element_t object)         = nullptr;  //<by object returns a hash
@@ -13,6 +15,8 @@ struct HashTable_t
     List_t* lists      = nullptr;                                  //<array of lists to store elements  
     size_t  table_size = 0;                                        //<number of lists in the array of lists
 };
+
+//======================================FUNCTION PROTOTYPES==========================================
 
 void HashTableCtor(HashTable_t* hash_table, size_t table_size, 
                    size_t (*hash_function)(const Element_t object), 

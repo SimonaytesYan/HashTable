@@ -8,12 +8,16 @@
 #include "Swap/Swap.h"
 #include "Errors.h"
 
+//==========================================CONSTANTS================================================
+
 static const int       ResizeCoef         = 2;
 static const void*     POISON_PTR         = (void*)13;
 static const Element_t POISON             = (Element_t)0X7FFFFFFF;
 static const size_t    POISON_SIZE_T      = 0X7FFFFFFF;
 static const char      COMAND_PROTOTYPE[] = "Dot GraphicDumps/dump%d -o GraphicDumps/Dump%d.png -T png";
 static       int       GRAPHIC_DUMP_CNT   = 0;
+
+//============================================STRUCTS=============================================
 
 typedef struct ListElem 
 {
@@ -41,6 +45,8 @@ typedef struct List_t
     bool      linerized = false;
 }List_t;
 
+//======================================FUNCTION PROTOTYPES==========================================
+
 static int  ListCheck(List_t* list);
 static int  ListConstructor(List_t* list, int capacity, int line, const char* name, const char* function, const char* file);
 static int  ListDtor(List_t* list);
@@ -58,6 +64,8 @@ static int LogicalIndexToPhys(List_t* list, int logic_index, int* physic_index);
 static int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index);
 static int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
 static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
+
+//======================================FUNCTION IMPLEMENTATIONS=====================================
 
 static int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index)
 {

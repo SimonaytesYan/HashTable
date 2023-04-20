@@ -1,10 +1,16 @@
+#include <stdarg.h>
+
 #include "Logging.h"
+
+//============================================DEFINES================================================
 
 #define LOGS_TO_FILE
 
+//==========================================GLOBAL VARS================================================
+
 FILE* logs_file = nullptr;
 
-#include <stdarg.h>
+//========================================FUNCTION IMPLEMENTATIONS=====================================
 
 int  OpenHtmlLogFile(const char* file_name)
 {

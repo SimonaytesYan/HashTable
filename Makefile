@@ -4,15 +4,20 @@ SLOW_FLAGS	  = -O0
 AVX_512_FLAGS = -mavx512f -march=tigerlake
 SFML_FLAGS    = -lsfml-graphics -lsfml-window -lsfml-system
 
-debug: hash_table_debug
-	g++ $(DEBUG_FLAGS) Src/main.cpp Obj/Logging.obj Obj/Swap.obj Obj/HashTable.obj -o Exe/Run
-fast: hash_table
-	g++ $(FAST_FLAGS)  Src/main.cpp Obj/Logging.obj Obj/Swap.obj Obj/HashTable.obj -o Exe/Run
+debug: hash_table_debug utility_debug
+	g++ $(DEBUG_FLAGS) Src/main.cpp Obj/Logging.obj Obj/Swap.obj Obj/HashTable.obj Obj/Utility.obj -o Exe/Run
+fast: hash_table utility_fast
+	g++ $(FAST_FLAGS)  Src/main.cpp Obj/Logging.obj Obj/Swap.obj Obj/HashTable.obj Obj/Utility.obj -o Exe/Run
 
 hash_table_debug: logging swap
-	g++ $(FAST_FLAGS) -c  Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
+	g++ $(FAST_FLAGS)  -c Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
 hash_table: logging swap
 	g++ $(DEBUG_FLAGS) -c Src/Libs/HashTable/HashTable.cpp Obj/Logging.obj Obj/Swap.obj -o Obj/HashTable.obj
+
+utility_debug:
+	g++ $(DEBUG_FLAGS) -c Src/Libs/Utility/Utility.cpp -o Obj/Utility.obj
+utility_fast:
+	g++ $(FAST_FLAGS)  -c Src/Libs/Utility/Utility.cpp -o Obj/Utility.obj
 
 logging:
 	g++ $(FAST_FLAGS) -c Src/Libs/Logging/Logging.cpp -o Obj/Logging.obj
