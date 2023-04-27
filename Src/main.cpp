@@ -9,13 +9,14 @@
 //==========================================CONSTANTS================================================
 
 const size_t kNumberFlags = 2;
-const char   kFlags[2][3] = {"-h", "-s"};
+const char   kFlags[2][3] = {"-h", 
+                             "-s"};
 
 const size_t kSrc32HashMask    = 0xEDB88320;
 
 const size_t kTableSize        = 997;
 const size_t kNumberHashFunc   = 6;
-const size_t kNumberSpeedTests = 100000000;
+const size_t kNumberSpeedTests = 40000000;
 
 //======================================FUNCTION PROTOTYPES==========================================
 
@@ -29,8 +30,8 @@ size_t HashFunction6(const Element_t object);
 void   TestHashFunctions(const char* test_data_file, const char* result_file);
 void   SpeedTest(const char* test_data_file);
 
-//extern "C" inline int comparator(Element_t a, Element_t b);
-static inline int comparator(Element_t a, Element_t b);
+extern "C" size_t hash_crc32(const Element_t a);
+static inline int comparator(const Element_t a, const Element_t b);
 
 //======================================FUNCTION IMPLEMENTATIONS=====================================
 
@@ -42,7 +43,7 @@ int main(int argc, char* argv[])
     {
         for (int j = 0; j < kNumberFlags; j++)
         {
-            if (strcmp(argv[i], kFlags[j]))
+            if (!strcmp(argv[i], kFlags[j]))
             {
                 flags[j] = true;
                 break;
@@ -95,7 +96,7 @@ size_t HashFunction4(const Element_t object)
 size_t HashFunction5(const Element_t object)
 {
     size_t i    = 0;
-    size_t hash = object[i];
+    size_t hash = object[0];
     while (object[i] != '\0')
     {
         hash = (((hash & (1ULL << 63ULL)) >> 63ULL) | (hash << 1ULL)) ^ (size_t)object[i];
@@ -104,29 +105,8 @@ size_t HashFunction5(const Element_t object)
     
     return hash;
 }
-/*__asm__(
-    ".intel_syntax noprefix\n\t"
 
-    "movsx rax, BYTE PTR [rdi]\n"       //rax = object[0]
-    "test  al, al\n"                    //  
-    "je _ret\n"                         //if (rax == 0) return rax
-
-    "_loop:\n"
-    "   rol rax, 1\n"
-    "   xor rax, rdx\n"
-
-    "   inc rdi\n"                     //rdi++
-    "   movzx rdx, BYTE PTR [rdi]\n"
-    "   test dl, dl\n"                   //
-    "   jne _loop\n"                     //while (dl != 0) return rax
-
-    "   _ret:\n"
-    "   ret\n"
-
-    ".att_syntax prefix\n"
-);*/
-
-//! src32 hash
+//! CRC32 hash
 size_t HashFunction6(const Element_t object) 
 {
     unsigned int  result = 0xFFFFFFFF;
@@ -226,7 +206,7 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
 void SpeedTest(const char* test_data_file)
 {
     HashTable_t hash_table = {};
-    HashTableCtor(&hash_table, kTableSize, HashFunction5, comparator);
+    HashTableCtor(&hash_table, kTableSize, hash_crc32, comparator);
 
     FILE* test_data     = fopen(test_data_file, "r");
     size_t number_words = 0;
@@ -234,10 +214,16 @@ void SpeedTest(const char* test_data_file)
     fclose(test_data);
 
     for(size_t i = 0; i < number_words / 2; i++)
-        HashTableInsert(&hash_table, words_arr[i]);
+    {
+        if (words_arr[i] != nullptr)
+            HashTableInsert(&hash_table, words_arr[i]);
+    }
 
     for (size_t i = 0; i < kNumberSpeedTests; i++)
-        HashTableFind(&hash_table, words_arr[i % number_words]);
+    {
+        if (words_arr[i % number_words] != nullptr)
+            HashTableFind(&hash_table, words_arr[i % number_words]);
+    }
 
     HashTableDtor(&hash_table);
 
@@ -246,11 +232,9 @@ void SpeedTest(const char* test_data_file)
     free(words_arr);
 }
 
-static inline int comparator(Element_t a, Element_t b)
+static inline int comparator(const Element_t a, const Element_t b)
 {
-    return strcmp(a, b);
-    
-    /*__asm__(
+    __asm__(
         ".intel_syntax noprefix\n\t"
 
         "xor eax, eax\n\t"              //eax = 0
@@ -280,5 +264,5 @@ static inline int comparator(Element_t a, Element_t b)
         "ret\n\t"
 
         ".att_syntax prefix\n"
-    );*/
+    );
 }
