@@ -2,6 +2,7 @@
 #define __SYM_LIST__
 
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "Logging/Logging.h"
@@ -12,7 +13,6 @@
 
 static const int       ResizeCoef         = 2;
 static const void*     POISON_PTR         = (void*)13;
-static const Element_t POISON             = (Element_t)0X7FFFFFFF;
 static const size_t    POISON_SIZE_T      = 0X7FFFFFFF;
 static const char      COMAND_PROTOTYPE[] = "Dot GraphicDumps/dump%d -o GraphicDumps/Dump%d.png -T png";
 static       int       GRAPHIC_DUMP_CNT   = 0;
@@ -21,7 +21,7 @@ static       int       GRAPHIC_DUMP_CNT   = 0;
 
 typedef struct ListElem 
 {
-    Element_t val  = 0;
+    Element_t val  = {};
     int       next = -1;
     int       prev = -1;
 } ListElem;
@@ -37,26 +37,26 @@ typedef struct LogInfo
 
 typedef struct List_t
 {
+    ListElem* data      = nullptr;
+
     size_t    size      = 0;
     size_t    capacity  = 0;
-    ListElem* data      = nullptr;
     LogInfo   debug     = {};
     int       free      = -1;
     bool      linerized = false;
 }List_t;
 
 //======================================FUNCTION PROTOTYPES==========================================
-
-static int  ListCheck(List_t* list);
 static int  ListConstructor(List_t* list, int capacity, int line, const char* name, const char* function, const char* file);
 static int  ListDtor(List_t* list);
+static int  ListCheck(List_t* list);
 static void DumpList(List_t* list, const char* function, const char* file, int line);
 static void GraphicDump(List_t* list);
+
 static int ListInsert(List_t* list, Element_t value, int after_which, int* index = nullptr);
 static int ListRemove(List_t* list, int index);
 static int FindFree(List_t* list, int* index);
 static int ResizeUp(List_t* list, int new_capacity);
-static int ListIterate(List_t* list, int* index);
 static int ListBegin(List_t* list, int *index);
 static int ListEnd(List_t* list, int *index);
 static int ListLinerization(List_t* list);
@@ -64,6 +64,9 @@ static int LogicalIndexToPhys(List_t* list, int logic_index, int* physic_index);
 static int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index);
 static int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
 static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
+
+//extern "C" inline void ListIterate(List_t* list, size_t* index);
+static void ListIterate(List_t* list, size_t* index);
 
 //======================================FUNCTION IMPLEMENTATIONS=====================================
 
@@ -104,20 +107,23 @@ static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index)
     return 0;
 }
 
-static int ListIterate(List_t* list, int* index)
+static void ListIterate(List_t* list, size_t* index)
 {
+    //*index = list->data[*index].next;
+    //return;
+
     #ifdef ON_LIST_CHECKING
         ReturnIfError(ListCheck(list));
     #endif
 
-    CHECK(index == nullptr || index == POISON_PTR, "index = nullptr", -1);
+    CHECK(index == nullptr || index == POISON_PTR, "index = nullptr", (void)-1);
 
     if (*index < 0 || (size_t)(*index) > list->capacity)
-        return 0;
+        return;
 
     *index = list->data[*index].next;
 
-    return 0;
+    return;
 }
 
 static int ListBegin(List_t* list, int *index)
@@ -157,14 +163,14 @@ static int ListLinerization(List_t* list)
 
     ListElem* new_data = (ListElem*)calloc(list->capacity + 1, sizeof(ListElem));
 
-    int index = 0;
+    size_t index = 0;
     for(int i = 0; i < list->size; i++)
     {
         ListIterate(list, &index);
         if (index == -1)
             return -1;
 
-        new_data[i + 1].val  = list->data[index].val;
+        memcpy(new_data[i + 1].val, list->data[index].val, sizeof(Element_t));
 
         if (i + 1 == list->size)
             new_data[i + 1].next = 0;
@@ -210,8 +216,8 @@ static void GraphicDump(List_t* list)
     CHECK(list == nullptr || list == POISON_PTR, "Pointer to list = null or poison", (void)0);
     CHECK(list->data == nullptr || list->data == POISON_PTR, "Pointer to list data = null or poison", (void)0);
 
-    fprintf(fp, "info[label = \"size = %llu\\n |"         \
-                               "capasity = %d \\n |"    \
+    fprintf(fp, "info[label = \"size = %zu\\n |"         \
+                               "capasity = %ld \\n |"    \
                                "<f> free = %d \\n |"    \
                                "linerized = %d \\n \"]\n",
                                list->size, 
@@ -222,13 +228,13 @@ static void GraphicDump(List_t* list)
     for(int i = 0; i <= list->capacity; i++)
     {
         if (i == 0)
-            fprintf(fp, "Node%d[fillcolor = white, label = \"<i>%d \\n | <v>%d \\n | {<p> %d |<n>  %d}\"]\n", 
+            fprintf(fp, "Node%d[fillcolor = white, label = \"<i>%d \\n | <v>%p \\n | {<p> %d |<n>  %d}\"]\n", 
                           i,              i,    list->data[i].val, list->data[i].prev, list->data[i].next);
         else if (list->data[i].next == -1 || list->data[i].prev == -1)
-            fprintf(fp, "Node%d[fillcolor = \"#B1FF9F\", label = \"<i>%d \\n | <v>%d \\n | {<p> %d |<n>  %d}\"]\n", 
+            fprintf(fp, "Node%d[fillcolor = \"#B1FF9F\", label = \"<i>%d \\n | <v>%p \\n | {<p> %d |<n>  %d}\"]\n", 
                           i,              i,    list->data[i].val, list->data[i].prev, list->data[i].next);
         else
-            fprintf(fp, "Node%d[fillcolor = \"#8F9EFF\", label = \"<i>%d \\n | <v>%d \\n | {<p> %d |<n>  %d}\"]\n", 
+            fprintf(fp, "Node%d[fillcolor = \"#8F9EFF\", label = \"<i>%d \\n | <v>%p \\n | {<p> %d |<n>  %d}\"]\n", 
                           i,              i,    list->data[i].val, list->data[i].prev, list->data[i].next);
     }
     
@@ -341,7 +347,7 @@ static int ListConstructor(List_t* list, int capacity, int line, const char* nam
     if (list->data != nullptr)
         for(int i = list->capacity; i >= 1; i--)
         {
-            list->data[i] = {POISON, -1, list->free};
+            list->data[i] = {{}, -1, list->free};
             list->free    = i;
         }
 
@@ -413,7 +419,6 @@ static int ListRemove(List_t* list, int index)
     list->data[next_ind].prev = prev_ind;
     list->data[prev_ind].next = next_ind;
 
-    list->data[index].val  = POISON;
     list->data[index].prev = list->free;
     list->data[index].next = -1;
 
@@ -436,7 +441,7 @@ static int ResizeUp(List_t* list, int new_capacity)
 
     for(int i = new_capacity; i >= list->capacity + 1; i--)
     {
-        list->data[i] = {POISON, -1, list->free};
+        list->data[i] = {{}, -1, list->free};
         list->free = i;
     }
     
@@ -465,7 +470,7 @@ static int ListInsert(List_t* list, Element_t value, int after_which, int* index
     #ifdef ON_LIST_CHECKING
         ReturnIfError(ListCheck(list));
     #endif
-    
+
     CHECK(after_which > list->capacity || after_which < 0, "Error index", -1);
     
     CHECK(list->data[after_which].next == -1 || list->data[after_which].prev == -1, "Index to not inserted element", -1);
@@ -484,7 +489,7 @@ static int ListInsert(List_t* list, Element_t value, int after_which, int* index
         list->linerized = false;
     
     ListElem* new_elem = &list->data[free_elem_index];
-    new_elem->val = value;
+    memcpy(new_elem->val, value, strlen(value));
     
     int next       = list->data[after_which].next;
     new_elem->next = next;

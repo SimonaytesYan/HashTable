@@ -1,5 +1,7 @@
 #include "HashTable.h"
 
+//#define DEBUG
+
 //======================================FUNCTION IMPLEMENTATIONS=====================================
 
 void HashTableDtor (HashTable_t* hash_table)
@@ -27,6 +29,7 @@ void HashTableCtor(HashTable_t* hash_table, size_t table_size,
 void HashTableInsert(HashTable_t* hash_table, Element_t element)
 {
     size_t hash = (hash_table->hash_function(element)) % hash_table->table_size;
+
     ListInsert(&(hash_table->lists[hash]), element, 0, nullptr);
 }
 
@@ -34,12 +37,12 @@ void HashTableRemove(HashTable_t* hash_table, Element_t element)
 {
     size_t hash = (hash_table->hash_function(element)) % hash_table->table_size;
 
-    int index = 0;
+    size_t index = 0;
+
     ListIterate(&hash_table->lists[hash], &index);
     while (index != 0)
     {
-        Element_t element_i = hash_table->lists[hash].data[index].val;
-        if (!hash_table->comparator(element_i, element))
+        if (!hash_table->comparator(hash_table->lists[hash].data[index].val, element))
         {
             ListRemove(&hash_table->lists[hash], index);
             return;
@@ -51,23 +54,16 @@ void HashTableRemove(HashTable_t* hash_table, Element_t element)
 
 bool HashTableFind(HashTable_t* hash_table, Element_t element)
 {
-    size_t hash = (hash_table->hash_function(element)) % hash_table->table_size;
+    size_t hash  = (hash_table->hash_function(element)) % hash_table->table_size;
+    size_t index = hash_table->lists[hash].data[0].next;
 
-    int index = 0;
-    ListIterate(&hash_table->lists[hash], &index);
     while (index != 0)
-    {
-        Element_t element_i = hash_table->lists[hash].data[index].val;
-        
-        //fprintf(stderr, "elem_i = <%s>\n", element_i);
-        //fprintf(stderr, "elem   = <%s>\n", element);
-        int comp_res = hash_table->comparator(element_i, element);
+    {        
+        int comp_res = hash_table->comparator(hash_table->lists[hash].data[index].val, element);
         if (!comp_res)
             return true;
-        //fprintf(stderr, "end cmp = %d\n", comp_res);
 
-        ListIterate(&hash_table->lists[hash], &index);
-        //fprintf(stderr, "go to next index\n");
+        index = hash_table->lists[hash].data[index].next;
     }
 
     return false;
