@@ -1,3 +1,6 @@
+#include <emmintrin.h>
+#include <immintrin.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -52,7 +55,7 @@ int main(int argc, char* argv[])
     }
 
     if (flags[0])
-        TestHashFunctions("Data/WarAndPeace.txt", "Data/CmpHashFunctions1.csv");
+        TestHashFunctions("Data/WarAndPeace.txt", "Data/CmpHashFunctions2.csv");
     if (flags[1])
         SpeedTest("Data/WarAndPeace.txt");
 }
@@ -126,6 +129,29 @@ size_t HashFunction6(const Element_t object)
     }
 
     return ~result;
+}
+
+//! CRC32 hash with intrinsic functions
+inline size_t HashFunction6_1(const Element_t object) 
+{
+    __asm__(
+        ".intel_syntax noprefix\n\t"
+        "mov eax, -1            \n\t" // start value
+        "_loop:                 \n\t"
+        "    mov rcx, [rdi]     \n\t"
+        
+        "    test rcx, rcx       \n\t"//
+        "    je _return          \n\t"// if (rcx == 0) return rax;
+        
+        "    crc32 rax, rcx\n\t"
+        
+        "    inc rdi             \n\t"// rdi++
+        "    jmp _loop           \n\t"// while(al == cl)
+        
+        "_return:\n\t"
+        "ret\n\t"
+        ".att_syntax prefix\n"
+    );
 }
 
 //==========================TEST FUNCTION IMPLEMENTATION==========================
@@ -206,7 +232,7 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
 void SpeedTest(const char* test_data_file)
 {
     HashTable_t hash_table = {};
-    HashTableCtor(&hash_table, kTableSize, hash_crc32, comparator);
+    HashTableCtor(&hash_table, kTableSize, HashFunction6_1, comparator);
 
     FILE* test_data     = fopen(test_data_file, "r");
     size_t number_words = 0;
@@ -236,6 +262,80 @@ static inline int comparator(const Element_t a, const Element_t b)
 {
     __asm__(
         ".intel_syntax noprefix\n\t"
+        "mov     rax, QWORD PTR [rdi]\n"
+        "mov     rdx, QWORD PTR [rsi]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 8]\n"
+        "mov     rdx, QWORD PTR [rsi + 8]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 16]\n"
+        "mov     rdx, QWORD PTR [rsi + 16]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 24]\n"
+        "mov     rdx, QWORD PTR [rsi + 24]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 32]\n"
+        "mov     rdx, QWORD PTR [rsi + 32]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 40]\n"
+        "mov     rdx, QWORD PTR [rsi + 40]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 48]\n"
+        "mov     rdx, QWORD PTR [rsi + 48]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 54]\n"
+        "mov     rdx, QWORD PTR [rsi + 54]\n"
+        "cmp     rax, rdx\n"
+        "jne     _ret\n"
+
+        "mov     rax, QWORD PTR [rdi + 60]\n"
+        "mov     rdx, QWORD PTR [rsi + 60]\n"
+        
+        "_ret:\n\t"
+        "sub eax, ecx\n\t"
+        "ret\n\t"
+
+        ".att_syntax prefix\n"
+    );
+}
+
+/*
+__m512i a_512 = _mm512_set_epi8(a[63], a[62], a[61], a[60], a[59], a[58], a[57], a[56],
+                                    a[55], a[54], a[53], a[52], a[51], a[50], a[49], a[48],
+                                    a[47], a[46], a[45], a[44], a[43], a[42], a[41], a[40],
+                                    a[39], a[38], a[37], a[36], a[35], a[34], a[33], a[32],
+                                    a[31], a[30], a[29], a[28], a[27], a[26], a[25], a[24],
+                                    a[23], a[22], a[21], a[20], a[19], a[18], a[17], a[16],
+                                    a[15], a[14], a[13], a[12], a[11], a[10], a[9],  a[8],
+                                    a[7],  a[6],  a[5],  a[4],  a[3],  a[2],  a[1],  a[0]);
+    
+    __m512i b_512 = _mm512_set_epi8(b[63], b[62], b[61], b[60], b[59], b[58], b[57], b[56],
+                                    b[55], b[54], b[53], b[52], b[51], b[50], b[49], b[48],
+                                    b[47], b[46], b[45], b[44], b[43], b[42], b[41], b[40],
+                                    b[39], b[38], b[37], b[36], b[35], b[34], b[33], b[32],
+                                    b[31], b[30], b[29], b[28], b[27], b[26], b[25], b[24],
+                                    b[23], b[22], b[21], b[20], b[19], b[18], b[17], b[16],
+                                    b[15], b[14], b[13], b[12], b[11], b[10], b[9],  b[8],
+                                    b[7],  b[6],  b[5],  b[4],  b[3],  b[2],  b[1],  b[0]);
+
+    return _mm512_cmp_epi64_mask(a_512, b_512, _CMP_NEQ_UQ);*/
+
+    /*__asm__(
+        ".intel_syntax noprefix\n\t"
 
         "xor eax, eax\n\t"              //eax = 0
         "xor ecx, ecx\n\t"              //ecx = 0
@@ -264,5 +364,4 @@ static inline int comparator(const Element_t a, const Element_t b)
         "ret\n\t"
 
         ".att_syntax prefix\n"
-    );
-}
+    );*/
