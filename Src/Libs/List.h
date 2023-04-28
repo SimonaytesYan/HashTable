@@ -9,6 +9,8 @@
 #include "Swap/Swap.h"
 #include "Errors.h"
 
+//#define ON_LIST_CHECKING
+
 //==========================================CONSTANTS================================================
 
 static const int       ResizeCoef         = 2;
@@ -66,8 +68,7 @@ static        int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_
 static        int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
 static        int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
 
-//extern "C" inline void ListIterate(List_t* list, size_t* index);
-static void ListIterate(List_t* list, size_t* index);
+static int ListIterate(List_t* list, size_t* index);
 
 //======================================FUNCTION IMPLEMENTATIONS=====================================
 
@@ -108,23 +109,20 @@ static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index)
     return 0;
 }
 
-static void ListIterate(List_t* list, size_t* index)
+static int ListIterate(List_t* list, size_t* index)
 {
-    //*index = list->data[*index].next;
-    //return;
-
     #ifdef ON_LIST_CHECKING
         ReturnIfError(ListCheck(list));
     #endif
 
-    CHECK(index == nullptr || index == POISON_PTR, "index = nullptr", (void)-1);
+    CHECK(index == nullptr || index == POISON_PTR, "index = nullptr", -1);
 
     if (*index < 0 || (size_t)(*index) > list->capacity)
-        return;
+        return -1;
 
     *index = list->data[*index].next;
 
-    return;
+    return -1;
 }
 
 static int ListBegin(List_t* list, int *index)
@@ -393,6 +391,7 @@ static int FindFree(List_t* list, int* index)
     #ifdef ON_LIST_CHECKING
         ReturnIfError(ListCheck(list));
     #endif
+
     *index = list->free;
     list->free = list->data[list->free].prev;
 
@@ -401,6 +400,13 @@ static int FindFree(List_t* list, int* index)
 
 static inline bool ListFind(List_t* list, Element_t element, int (*comparator)(const Element_t a, const Element_t b))
 {
+    #ifdef ON_LIST_CHECKING
+        ReturnIfError(ListCheck(list));
+    #endif
+
+    assert(list       != nullptr);
+    assert(comparator != nullptr);
+
     size_t index = list->data[0].next;
 
     while (index != 0)

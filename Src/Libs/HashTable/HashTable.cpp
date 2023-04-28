@@ -1,3 +1,5 @@
+#define NDEBUG
+
 #include <assert.h>
 
 #include "HashTable.h"
@@ -9,7 +11,7 @@
 void HashTableDtor (HashTable_t* hash_table)
 {
     assert(hash_table    != nullptr);
-    
+
     for (int i = 0; i < hash_table->table_size; i++)
         ListDtor(&hash_table->lists[i]);
 

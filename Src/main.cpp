@@ -1,3 +1,5 @@
+#define NDEBUG
+
 #include <assert.h>
 #include <emmintrin.h>
 #include <immintrin.h>
@@ -137,7 +139,7 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
 {
     assert(test_data_file != nullptr);
     assert(result_file    != nullptr);
-    
+
     HashTable_t hash_tables[kNumberHashFunc] = {};
     HashTableCtor(&hash_tables[0], kTableSize, HashFunction1, comparator);
     HashTableCtor(&hash_tables[1], kTableSize, HashFunction2, comparator);
@@ -216,14 +218,14 @@ void SpeedTest(const char* test_data_file)
     assert(test_data_file != nullptr);
     
     HashTable_t hash_table = {};
-    HashTableCtor(&hash_table, kTableSize, hash_crc32, comparator);
+    HashTableCtor(&hash_table, kTableSize, HashFunction6, comparator);
 
     FILE* test_data     = fopen(test_data_file, "r");
     size_t number_words = 0;
     char** words_arr    = GetWordsFromFile(test_data, &number_words);
     fclose(test_data);
 
-    for(size_t i = 0; i < number_words / 2; i++)
+    for(size_t i = 0; i < number_words; i+=2)
     {
         if (words_arr[i] != nullptr)
             HashTableInsert(&hash_table, words_arr[i]);
