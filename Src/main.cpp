@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <emmintrin.h>
 #include <immintrin.h>
 #include <stdio.h>
@@ -131,32 +132,12 @@ size_t HashFunction6(const Element_t object)
     return ~result;
 }
 
-//! CRC32 hash with intrinsic functions
-inline size_t HashFunction6_1(const Element_t object) 
-{
-    __asm__(
-        ".intel_syntax noprefix\n\t"
-        "mov eax, -1            \n\t" // start value
-        "_loop:                 \n\t"
-        "    mov rcx, [rdi]     \n\t"
-        
-        "    test rcx, rcx       \n\t"//
-        "    je _return          \n\t"// if (rcx == 0) return rax;
-        
-        "    crc32 rax, rcx\n\t"
-        
-        "    inc rdi             \n\t"// rdi++
-        "    jmp _loop           \n\t"// while(al == cl)
-        
-        "_return:\n\t"
-        "ret\n\t"
-        ".att_syntax prefix\n"
-    );
-}
-
 //==========================TEST FUNCTION IMPLEMENTATION==========================
 void TestHashFunctions(const char* test_data_file, const char* result_file)
 {
+    assert(test_data_file != nullptr);
+    assert(result_file    != nullptr);
+    
     HashTable_t hash_tables[kNumberHashFunc] = {};
     HashTableCtor(&hash_tables[0], kTableSize, HashFunction1, comparator);
     HashTableCtor(&hash_tables[1], kTableSize, HashFunction2, comparator);
@@ -175,6 +156,7 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
         int k = 0;
         scanf("%c", &k);
     #endif
+
     for (size_t table_i = 0; table_i < kNumberHashFunc; table_i++)
     {
         #ifdef DEBUG
@@ -231,8 +213,10 @@ void TestHashFunctions(const char* test_data_file, const char* result_file)
 
 void SpeedTest(const char* test_data_file)
 {
+    assert(test_data_file != nullptr);
+    
     HashTable_t hash_table = {};
-    HashTableCtor(&hash_table, kTableSize, HashFunction6_1, comparator);
+    HashTableCtor(&hash_table, kTableSize, hash_crc32, comparator);
 
     FILE* test_data     = fopen(test_data_file, "r");
     size_t number_words = 0;

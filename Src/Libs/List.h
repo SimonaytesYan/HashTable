@@ -53,17 +53,18 @@ static int  ListCheck(List_t* list);
 static void DumpList(List_t* list, const char* function, const char* file, int line);
 static void GraphicDump(List_t* list);
 
-static int ListInsert(List_t* list, Element_t value, int after_which, int* index = nullptr);
-static int ListRemove(List_t* list, int index);
-static int FindFree(List_t* list, int* index);
-static int ResizeUp(List_t* list, int new_capacity);
-static int ListBegin(List_t* list, int *index);
-static int ListEnd(List_t* list, int *index);
-static int ListLinerization(List_t* list);
-static int LogicalIndexToPhys(List_t* list, int logic_index, int* physic_index);
-static int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index);
-static int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
-static int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
+static inline bool ListFind(List_t* list, Element_t element, int (*comparator)(const Element_t a, const Element_t b));
+static        int ListInsert(List_t* list, Element_t value, int after_which, int* index = nullptr);
+static        int ListRemove(List_t* list, int index);
+static        int FindFree(List_t* list, int* index);
+static        int ResizeUp(List_t* list, int new_capacity);
+static        int ListBegin(List_t* list, int *index);
+static        int ListEnd(List_t* list, int *index);
+static        int ListLinerization(List_t* list);
+static        int LogicalIndexToPhys(List_t* list, int logic_index, int* physic_index);
+static        int LogicaIlndexToPhys(List_t* list, int logic_index, int* physic_index);
+static        int Logica1IndexToPhys(List_t* list, int logic_index, int* physic_index);
+static        int Logica1lndexToPhys(List_t* list, int logic_index, int* physic_index);
 
 //extern "C" inline void ListIterate(List_t* list, size_t* index);
 static void ListIterate(List_t* list, size_t* index);
@@ -396,6 +397,22 @@ static int FindFree(List_t* list, int* index)
     list->free = list->data[list->free].prev;
 
     return 0;
+}
+
+static inline bool ListFind(List_t* list, Element_t element, int (*comparator)(const Element_t a, const Element_t b))
+{
+    size_t index = list->data[0].next;
+
+    while (index != 0)
+    {
+        int comp_res = comparator(list->data[index].val, element);
+        if (!comp_res)
+            return true;
+
+        index = list->data[index].next;
+    }
+
+    return false;
 }
 
 static int ListRemove(List_t* list, int index)
